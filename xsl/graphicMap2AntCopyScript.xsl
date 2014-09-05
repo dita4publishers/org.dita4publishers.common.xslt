@@ -11,9 +11,6 @@
   
 <!--  <xsl:import href="lib/relpath_util.xsl"/>-->
   
-  <!-- Control whether failure to copy a graphic is a fatal error -->
-  <xsl:param name="copyGraphics.failOnError" as="xs:string" select="'false'"/>
-  
   <xsl:output name="ant" method="xml"
     indent="yes"
   />
@@ -65,7 +62,7 @@
     <xsl:if test="false()">    
       <xsl:message> + [DEBUG] graphic-map-item: $toFile="<xsl:sequence select="$toFile"/>"</xsl:message>
     </xsl:if>
-    <copy toFile="{$toFile}" overwrite="yes" failonerror="{$copyGraphics.failOnError}"
+    <copy toFile="{$toFile}" overwrite="yes"
     >
       <fileset dir="{$sourceDir}">
         <include name="{relpath:getName(@input-url)}"/>
