@@ -60,6 +60,8 @@
               <xsl:attribute name="id" select="generate-id(.)"/>
             </xsl:otherwise>
           </xsl:choose>
+          <!-- For EPUB3: -->
+          <xsl:sequence select="@properties"/>
         </gmap:graphic-map-item>
       </xsl:for-each>
     </gmap:graphic-map>
