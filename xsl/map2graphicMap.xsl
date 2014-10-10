@@ -40,6 +40,7 @@
     <xsl:message> + [INFO] Found <xsl:sequence select="count($uniqueRefs/*)"/> unique graphic references.</xsl:message>
 
     <gmap:graphic-map>
+      <xsl:call-template name="handleImageListFile"/>
       <xsl:for-each select="$uniqueRefs/*">
         <xsl:variable name="absoluteUrl" as="xs:string" select="@href"/>
         <xsl:variable name="filename" as="xs:string" select="@filename"/>
@@ -99,84 +100,7 @@
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
-  <!-- 
-      There are different scenarios here:
-      - case 1: topic contains an image referenced with the @href:
-        @xtrf is the absolute topic path
-        @href is the relative path to the image
-        
-      - case 2: topic contains an image referenced with the @keyref
-        @xtrf is the absolute topic path
-        @href is the relative path to the image
-        
-      - case 3: topic contains an image referenced with the @keyref or @href
-                BUT one topicref ancestor referencing the topic has a @copy-to 
-                which copy the file to a different location
-                
-        @xtrf is the absolute topic path of the original topic
-        @href is the relative path to the image
-        so we two others params to figure the image location
-        param name="docMapUri" which is the basename of the main ditamap location
-        param name="copyto" which is the value of the ancestor topicref @copy-to
-     
-  
-  -->
-  <xsl:template match="*[df:class(.,'topic/image')]" mode="get-graphic-refs">
-    <xsl:param name="copyto" select="''" as="xs:string" tunnel="yes"/>
-    <xsl:param name="docMapUri" select="''" as="xs:string" tunnel="yes"/>
-    <xsl:variable name="docUri">
-      <xsl:choose>
-        <xsl:when test="$copyto != ''">
-          <xsl:if test="$debugBoolean">
-            <xsl:message> + [DEBUG] xtrf is not the source</xsl:message>
-            <xsl:message> @copy-to :<xsl:value-of select="$copyto"/></xsl:message>
-            <xsl:message> Document root is :<xsl:value-of select="$docMapUri"/></xsl:message>
-          </xsl:if>
-          <xsl:value-of select="relpath:toUrl(concat($docMapUri, $copyto))"/>
-          
-        </xsl:when>
-        <xsl:otherwise>
-          <!-- NOTE: following conref resolution, the @xtrf attributes on conreffed
-               elements are not rewritten to reflect their location as used, so
-               the @xtrf value is not reliable. I think the only solution is to use
-               the @xtrf value on the root element, which would not normally be the
-               itself the result of a conref (that is, it would be very rare to
-               have a topic that then conrefs to a different topic)
-            -->
-          <xsl:value-of select="relpath:toUrl(@xtrf)"/>
-        </xsl:otherwise>
-      </xsl:choose>
-    </xsl:variable>
-
-    <xsl:variable name="parentPath" select="relpath:getParent($docUri)" as="xs:string"/>
-    <xsl:variable name="graphicPath" select="@href" as="xs:string?"/>
-    <xsl:variable name="rawUrl" select="concat($parentPath, '/', $graphicPath)" as="xs:string"/>
-    <xsl:variable name="absoluteUrl" select="relpath:getAbsolutePath($rawUrl)"/>
-
-
-    <xsl:if test="$debugBoolean">
-    <xsl:message> + [DEBUG] get-graphic-refs for image: docUri="<xsl:sequence select="$docUri"/>"
-        parentPath ="<xsl:sequence select="$parentPath"/>" 
-        graphicPath="<xsl:sequence select="$graphicPath"/>"
-        rawUrl     ="<xsl:sequence select="$rawUrl"/>" 
-        absoluteUrl="<xsl:sequence select="$absoluteUrl"/>" </xsl:message>
-    </xsl:if>
-    <xsl:choose>
-      <xsl:when test="not($graphicPath)">
-        <xsl:variable name="topic" as="element()?" select="(ancestor-or-self::*[df:class(., 'topic/topic')])[1]"/>
-        <xsl:variable name="contextString" as="xs:string"
-          select="if ($topic) 
-          then concat('Topic ', df:getNavtitleForTopic($topic))
-          else name(..)"/>
-        <xsl:message> + [WARN] Image element with no @href or @keyref attribute in <xsl:sequence select="$contextString"
-          /></xsl:message>
-      </xsl:when>
-      <xsl:otherwise>
-        <gmap:graphic-ref href="{$absoluteUrl}" filename="{relpath:getName($absoluteUrl)}"/>
-      </xsl:otherwise>
-    </xsl:choose>
-
-  </xsl:template>
+ 
 
   <xsl:template match="*[df:class(.,'topic/image')]" mode="generate-graphic-map">
     <xsl:variable name="docUri" select="relpath:toUrl(@xtrf)" as="xs:string"/>
@@ -307,5 +231,34 @@
   
 
   <xsl:template match="text()" mode="generate-graphic-map get-graphic-refs"/>
+
+<xsl:template name="handleImageListFile">
+    <xsl:variable name="imageListUri" as="xs:string"
+       select="relpath:newFile($tempdir, 'image.list')"
+    />
+    <xsl:choose>
+      <xsl:when test="unparsed-text-available($imageListUri)">
+        <xsl:variable name="imageList"
+          select="unparsed-text($imageListUri)"
+        />
+        <xsl:variable name="inputdirUrl" as="xs:string"
+          select="relpath:toUrl($inputdir)"
+        />
+        <xsl:for-each select="tokenize($imageList, '&#x0a;')">
+<!--          <xsl:message> + [DEBUG] line[<xsl:value-of select="position()"/>]="<xsl:value-of select="."/>"</xsl:message>-->
+          
+          <xsl:variable name="absoluteUrl" as="xs:string"
+            select="relpath:newFile($inputdirUrl, .)"
+          />
+<!--          <xsl:message> + [DEBUG]  absoluteUrl="<xsl:value-of select="$absoluteUrl"/>"</xsl:message>-->
+          <gmap:graphic-map-item input-url="{$absoluteUrl}"
+            output-url="{relpath:newFile($imagesOutputPath, relpath:getName($absoluteUrl))}"/>
+        </xsl:for-each>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:message> + [INFO] Did not find image list file "<xsl:value-of select="$imageListUri"/>"</xsl:message>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
 
 </xsl:stylesheet>
