@@ -13,7 +13,11 @@
   <xsl:output name="ant" method="xml" indent="yes"/>
 
   <xsl:template match="*[df:class(., 'map/map')]" mode="generate-graphic-map">
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>    
     <xsl:param name="effectiveCoverGraphicUri" select="''" as="xs:string" tunnel="yes"/>
+    
+    <xsl:variable name="doDebug" as="xs:boolean" select="true()"/>  
+    
     <xsl:variable name="docMapUri" select="concat(relpath:getParent(@xtrf), '/')" as="xs:string"/>
     <xsl:message> + [INFO] Generating graphic input-to-output map...</xsl:message>
     
@@ -53,8 +57,11 @@
           else $filename
           "/>
         <gmap:graphic-map-item input-url="{$absoluteUrl}" output-url="{relpath:newFile($imagesOutputPath, $key)}">
+          <xsl:if test="$doDebug">
+            <xsl:message> + [DEBUG] generate-graphic-map: ref=<xsl:sequence select="."/></xsl:message>
+          </xsl:if>
           <xsl:choose>
-            <xsl:when test="@id">
+            <xsl:when test="@id != ''">
               <xsl:sequence select="@id"/>
             </xsl:when>
             <xsl:otherwise>
@@ -251,7 +258,8 @@
             select="relpath:newFile($inputdirUrl, .)"
           />
 <!--          <xsl:message> + [DEBUG]  absoluteUrl="<xsl:value-of select="$absoluteUrl"/>"</xsl:message>-->
-          <gmap:graphic-map-item input-url="{$absoluteUrl}"
+          <gmap:graphic-map-item id="image-list-item-{position()}" 
+            input-url="{$absoluteUrl}"
             output-url="{relpath:newFile($imagesOutputPath, relpath:getName($absoluteUrl))}"/>
         </xsl:for-each>
       </xsl:when>
