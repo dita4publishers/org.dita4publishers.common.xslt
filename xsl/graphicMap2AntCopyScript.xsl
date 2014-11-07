@@ -35,20 +35,30 @@
   </xsl:template>
   
   <xsl:template match="gmap:graphic-map" mode="generate-graphic-copy-ant-script">
+    
+    
     <project name="graphics-copy" default="copy-graphics">
+      <xsl:apply-templates mode="generate-copy-targets"/>
       <target name="copy-graphics">
         <echo message="Doing copy graphics..."/>
         <xsl:apply-templates mode="#current"/>
+        <echo message="Copy graphics done."/>
       </target>
     </project>
   </xsl:template>
   
   <xsl:template match="gmap:graphic-map-item" mode="generate-graphic-copy-ant-script">
+    <xsl:variable name="targetId" as="xs:string" select="if (@id) then @id else position()"/>
+    <antcall target="copy-{$targetId}"/>
+  </xsl:template>
+  
+  <xsl:template match="gmap:graphic-map-item" mode="generate-copy-targets">
     <!--
-      <gmap:graphic-map-item 
+      <gmap:graphic-map-item id="map-item-01"
         input-url="file:/Users/ekimber/workspace/dita4publishers/sample_data/epub-test/covers/images/1407-02.jpg"
         output-url="file:/Users/ekimber/workspace/dita4publishers/sample_data/epub-test/epub/images/1407-02.jpg"/>
     -->
+    <xsl:variable name="targetId" as="xs:string" select="if (@id) then @id else position()"/>
     <xsl:variable name="sourceDir" 
       select="relpath:toFile(relpath:getParent(string(@input-url)), $platform)"/>
     <xsl:if test="false()">
@@ -62,12 +72,31 @@
     <xsl:if test="false()">    
       <xsl:message> + [DEBUG] graphic-map-item: $toFile="<xsl:sequence select="$toFile"/>"</xsl:message>
     </xsl:if>
-    <copy toFile="{$toFile}" overwrite="yes"
-    >
-      <fileset dir="{$sourceDir}">
-        <include name="{relpath:getName(@input-url)}"/>
-      </fileset>
-    </copy>
+    
+    <target name="check-{$targetId}">
+      <condition property="is-{$targetId}">
+        <available 
+          filepath="{$sourceDir}"
+          file="{relpath:getName(@input-url)}"
+          />
+      </condition>      
+    </target>
+    
+    <target name="report-{$targetId}" unless="is-{$targetId}">
+      <!-- FIXME: Instead of just reporting this, we could copy in a missing graphic file 
+                  or even generate one using ImageMagick.
+        -->
+      <echo>[WARN] File <xsl:value-of select="@input-url"/> cannot be found. Will not be copied.</echo>
+    </target>
+    
+    <target name="copy-{$targetId}" depends="check-{$targetId}, report-{$targetId}" if="is-{$targetId}">
+      <copy toFile="{$toFile}" overwrite="yes"
+      >
+        <fileset dir="{$sourceDir}">
+          <include name="{relpath:getName(@input-url)}"/>
+        </fileset>
+      </copy>      
+    </target>
   </xsl:template>
   
 </xsl:stylesheet>
