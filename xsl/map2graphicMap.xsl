@@ -16,7 +16,7 @@
     <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>    
     <xsl:param name="effectiveCoverGraphicUri" select="''" as="xs:string" tunnel="yes"/>
     
-    <xsl:variable name="doDebug" as="xs:boolean" select="true()"/>  
+<!--    <xsl:variable name="doDebug" as="xs:boolean" select="true()"/>  -->
     
     <xsl:variable name="docMapUri" select="concat(relpath:getParent(@xtrf), '/')" as="xs:string"/>
     <xsl:message> + [INFO] Generating graphic input-to-output map...</xsl:message>
