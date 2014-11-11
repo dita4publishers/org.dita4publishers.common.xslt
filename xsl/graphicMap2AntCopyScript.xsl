@@ -48,7 +48,7 @@
   </xsl:template>
   
   <xsl:template match="gmap:graphic-map-item" mode="generate-graphic-copy-ant-script">
-    <xsl:variable name="targetId" as="xs:string" select="if (@id) then @id else position()"/>
+    <xsl:variable name="targetId" as="xs:string" select="if (@id) then @id else concat('map-item-', position())"/>
     <antcall target="copy-{$targetId}"/>
   </xsl:template>
   
@@ -58,7 +58,7 @@
         input-url="file:/Users/ekimber/workspace/dita4publishers/sample_data/epub-test/covers/images/1407-02.jpg"
         output-url="file:/Users/ekimber/workspace/dita4publishers/sample_data/epub-test/epub/images/1407-02.jpg"/>
     -->
-    <xsl:variable name="targetId" as="xs:string" select="if (@id) then @id else position()"/>
+    <xsl:variable name="targetId" as="xs:string" select="if (@id) then @id else concat('map-item-', position())"/>
     <xsl:variable name="sourceDir" 
       select="relpath:toFile(relpath:getParent(string(@input-url)), $platform)"/>
     <xsl:if test="false()">
