@@ -48,7 +48,9 @@
   </xsl:template>
   
   <xsl:template match="gmap:graphic-map-item" mode="generate-graphic-copy-ant-script">
-    <xsl:variable name="targetId" as="xs:string" select="if (@id) then @id else concat('map-item-', position())"/>
+    <xsl:variable name="targetId" as="xs:string" 
+      select="if (@id) then @id else concat('map-item-', position())" 
+    />
     <antcall target="copy-{$targetId}"/>
   </xsl:template>
   
