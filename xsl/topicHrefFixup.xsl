@@ -103,7 +103,7 @@
           <xsl:variable name="relPathToTarget" as="xs:string" 
             select="relpath:getRelativePath(relpath:getParent($thisXmlTopicBaseUrl), 
                                             relpath:getParent($targetXmlTopicBaseUrl))"/>
-          <xsl:sequence select="concat(relpath:newFile($relPathToTarget, $baseTargetFilename), $DITAEXT)"/>
+          <xsl:sequence select="concat(relpath:newFile($relPathToTarget, $baseTargetFilename), '.xml')"/>
         </xsl:when>
         <xsl:when test="$parentElem/@format and 
                         $parentElem/@format != '' and 
@@ -113,7 +113,7 @@
         </xsl:when>
         <xsl:otherwise>
           <xsl:message> + [WARN] Unable to resolve href '<xsl:sequence select="string(.)"/>' to a topic</xsl:message>
-          <xsl:sequence select="concat('unresolvable-reference', $DITAEXT)"/>
+          <xsl:sequence select="concat('unresolvable-reference', '.xml')"/>
         </xsl:otherwise>
       </xsl:choose>      
     </xsl:variable>
