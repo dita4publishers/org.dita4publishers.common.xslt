@@ -84,8 +84,11 @@
   </xsl:template>
   
   
-  <xsl:template match="*[df:isTopicRef(.)][not(@scope = 'external') and not(@scope = 'peer')][not(ancestor::*[df:class(., 'map/topicref')][@copy-to])]"
-    mode="generate-graphic-map get-graphic-refs">
+  <xsl:template mode="generate-graphic-map get-graphic-refs"
+                match="*[df:isTopicRef(.)]
+                             [not(@scope = ('external', 'peer'))]
+                             [not(ancestor::*[df:class(., 'map/topicref')][@copy-to])]"
+    >
   
     
     <xsl:variable name="topic" select="df:resolveTopicRef(.)" as="element()*"/>
