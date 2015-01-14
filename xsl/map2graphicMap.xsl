@@ -5,7 +5,7 @@
   xmlns:gmap="http://dita4publishers/namespaces/graphic-input-to-output-map" exclude-result-prefixes="xs df relpath"
   version="2.0">
 
-  <!--  
+  <!--
   <xsl:import href="lib/dita-support-lib.xsl"/>
   <xsl:import href="lib/relpath_util.xsl"/>
 -->
@@ -13,20 +13,20 @@
   <xsl:output name="ant" method="xml" indent="yes"/>
 
   <xsl:template match="*[df:class(., 'map/map')]" mode="generate-graphic-map">
-    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>    
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
     <xsl:param name="effectiveCoverGraphicUri" select="''" as="xs:string" tunnel="yes"/>
-    
+
 <!--    <xsl:variable name="doDebug" as="xs:boolean" select="true()"/>  -->
-    
+
     <xsl:variable name="docMapUri" select="concat(relpath:getParent(@xtrf), '/')" as="xs:string"/>
     <xsl:message> + [INFO] Generating graphic input-to-output map...</xsl:message>
-    
+
     <xsl:variable name="graphicRefs" as="element()*">
       <xsl:apply-templates mode="get-graphic-refs" select=".//*[df:isTopicRef(.)]">
         <xsl:with-param name="docMapUri" select="$docMapUri" tunnel="yes"/>
       </xsl:apply-templates>
       <xsl:if test="$FILTERDOC">
-        <xsl:apply-templates mode="get-graphic-refs" select="$FILTERDOC/*"/>        
+        <xsl:apply-templates mode="get-graphic-refs" select="$FILTERDOC/*"/>
       </xsl:if>
       <xsl:apply-templates mode="additional-graphic-refs" select=".">
         <xsl:with-param name="docMapUri" select="$docMapUri" tunnel="yes"/>
@@ -82,15 +82,15 @@
          or whatever.
     -->
   </xsl:template>
-  
-  
+
+
   <xsl:template mode="generate-graphic-map get-graphic-refs"
                 match="*[df:isTopicRef(.)]
                              [not(@scope = ('external', 'peer'))]
                              [not(ancestor::*[df:class(., 'map/topicref')][@copy-to])]"
     >
-  
-    
+
+
     <xsl:variable name="topic" select="df:resolveTopicRef(.)" as="element()*"/>
 
     <xsl:variable name="copyto" select="@copy-to"/>
@@ -102,7 +102,7 @@
       </xsl:when>
       <xsl:otherwise>
         <xsl:apply-templates
-          select="$topic//*[df:class(.,'topic/image')] | 
+          select="$topic//*[df:class(.,'topic/image')] |
                   $topic//*[df:class(.,'topic/object')]"
           mode="#current">
           <xsl:with-param name="copyto" select="string($copyto)" as="xs:string" tunnel="yes"/>
@@ -110,7 +110,7 @@
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
- 
+
 
   <xsl:template match="*[df:class(.,'topic/image')]" mode="generate-graphic-map">
     <xsl:variable name="docUri" select="relpath:toUrl(@xtrf)" as="xs:string"/>
@@ -147,7 +147,7 @@
     </xsl:if>
     <xsl:if test="$dataPath != '' and not(starts-with($dataPath, 'http:'))">
       <xsl:variable name="rawUrl"
-        select="if (@codeBase != '') 
+        select="if (@codeBase != '')
         then relpath:newFile($codeBase, $dataPath)
         else relpath:newFile($parentPath, $dataPath)"
         as="xs:string"/>
@@ -169,7 +169,7 @@
     <xsl:variable name="dataPath" select="@data" as="xs:string?"/>
     <xsl:variable name="codeBase" select="@codebase" as="xs:string?"/>
     <xsl:variable name="rawUrl"
-      select="if (@codeBase != '') 
+      select="if (@codeBase != '')
       then relpath:newFile($codeBase, $dataPath)
       else relpath:newFile($parentPath, $dataPath)"
       as="xs:string"/>
@@ -197,7 +197,7 @@
       <xsl:when test="not($valuePath)">
         <xsl:variable name="topic" as="element()?" select="(ancestor-or-self::*[df:class(., 'topic/topic')])[1]"/>
         <xsl:variable name="contextString" as="xs:string"
-          select="if ($topic) 
+          select="if ($topic)
           then concat('Topic ', df:getNavtitleForTopic($topic))
           else name(..)"/>
         <xsl:message> + [WARN] param element with @valuetype of 'ref' but no @value attribute in <xsl:sequence
@@ -221,7 +221,7 @@
         output-url="{relpath:newFile($imagesOutputPath, relpath:getName($absoluteUrl))}"/>
     </xsl:if>
   </xsl:template>
-  
+
   <xsl:template match="val | val/prop | val/revprop" mode="get-graphic-refs">
     <xsl:apply-templates mode="#current"/>
   </xsl:template>
@@ -232,17 +232,19 @@
     <xsl:variable name="graphicPath" select="@imageref" as="xs:string"/>
     <xsl:variable name="rawUrl" select="concat($parentPath, '/', $graphicPath)" as="xs:string"/>
     <xsl:variable name="absoluteUrl" select="relpath:getAbsolutePath($rawUrl)"/>
-    
+
     <xsl:if test="$graphicPath">
       <gmap:graphic-ref href="{$absoluteUrl}" filename="{relpath:getName($absoluteUrl)}"/>
     </xsl:if>
   </xsl:template>
-  
-  
+
+
 
   <xsl:template match="text()" mode="generate-graphic-map get-graphic-refs"/>
 
 <xsl:template name="handleImageListFile">
+  <xsl:param name="uplevels" as="xs:string" select="''" tunnel="yes" />
+
     <xsl:variable name="imageListUri" as="xs:string"
        select="relpath:newFile($tempdir, 'image.list')"
     />
@@ -256,12 +258,14 @@
         />
         <xsl:for-each select="tokenize($imageList, '&#x0a;')">
 <!--          <xsl:message> + [DEBUG] line[<xsl:value-of select="position()"/>]="<xsl:value-of select="."/>"</xsl:message>-->
-          
+
           <xsl:variable name="absoluteUrl" as="xs:string"
-            select="relpath:newFile($inputdirUrl, .)"
+            select="relpath:newFile($inputdirUrl, concat($uplevels, .))"
           />
+
+
 <!--          <xsl:message> + [DEBUG]  absoluteUrl="<xsl:value-of select="$absoluteUrl"/>"</xsl:message>-->
-          <gmap:graphic-map-item id="image-list-item-{position()}" 
+          <gmap:graphic-map-item id="image-list-item-{position()}"
             input-url="{$absoluteUrl}"
             output-url="{relpath:newFile($imagesOutputPath, relpath:getName($absoluteUrl))}"/>
         </xsl:for-each>
