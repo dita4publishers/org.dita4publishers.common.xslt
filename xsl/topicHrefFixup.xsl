@@ -135,6 +135,7 @@
   <xsl:template mode="href-fixup" match="*">
     <!--<xsl:message> + [DEBUG] href-fixup, node template, element=<xsl:sequence select="name(.)"/>...</xsl:message>-->
     <xsl:element name="{name(.)}">
+      <xsl:attribute name="xml:base"><xsl:value-of select="base-uri()"/></xsl:attribute>
       <xsl:apply-templates select="@*,node()" mode="#current"/>
     </xsl:element>
   </xsl:template>
