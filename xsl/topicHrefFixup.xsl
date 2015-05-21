@@ -5,6 +5,7 @@
   xmlns:htmlutil="http://dita4publishers.org/functions/htmlutil"
   xmlns:df="http://dita2indesign.org/dita/functions"
   xmlns:m="http://www.w3.org/1998/Math/MathML"
+  xmlns:svg="http://www.w3.org/2000/svg"
   xmlns:relpath="http://dita2indesign/functions/relpath"
   
   exclude-result-prefixes="xs htmlutil df relpath"
@@ -134,6 +135,11 @@
   
   <xsl:template mode="href-fixup" match="*">
     <!--<xsl:message> + [DEBUG] href-fixup, node template, element=<xsl:sequence select="name(.)"/>...</xsl:message>-->
+    <!-- FIXME: I think we need to be using local-name() here and being a bit
+                more namespace aware. Otherwise, the prefixes used in any 
+                namespaced (i.e., foreign) content need to be declared in
+                the stylesheet.
+      -->
     <xsl:element name="{name(.)}">
       <xsl:attribute name="xml:base"><xsl:value-of select="base-uri()"/></xsl:attribute>
       <xsl:apply-templates select="@*,node()" mode="#current"/>
