@@ -95,7 +95,7 @@
       <copy toFile="{$toFile}" overwrite="yes"
       >
         <fileset dir="{$sourceDir}">
-          <include name="{relpath:getName(@input-url)}"/>
+          <include name="{relpath:toFile(relpath:getName(@input-url), $platform)}"/>
         </fileset>
       </copy>      
     </target>
