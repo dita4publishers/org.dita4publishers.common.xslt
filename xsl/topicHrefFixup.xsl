@@ -5,6 +5,7 @@
   xmlns:htmlutil="http://dita4publishers.org/functions/htmlutil"
   xmlns:df="http://dita2indesign.org/dita/functions"
   xmlns:m="http://www.w3.org/1998/Math/MathML"
+  xmlns:svg="http://www.w3.org/2000/svg"
   xmlns:relpath="http://dita2indesign/functions/relpath"
   
   exclude-result-prefixes="xs htmlutil df relpath"
@@ -14,26 +15,70 @@
     <xsl:apply-templates mode="#current"/>
   </xsl:template>
   
-  <xsl:template mode="href-fixup" match="image/@href" priority="10">
+  <xsl:template mode="href-fixup" match="*[df:class(., 'topic/image')]/@href" priority="10">
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
     <xsl:param name="topicResultUri" as="xs:string" tunnel="yes"/>
     
     <xsl:variable name="origHref" select="." as="xs:string"/>
     <xsl:variable name="effectiveImageUri" 
       select="relpath:newFile(relpath:newFile($outdir, $imagesOutputDir), relpath:getName($origHref))" 
       as="xs:string"/>
-    <!--<xsl:message> + [DEBUG] href-fixup: href="<xsl:sequence select="$origHref"/>"</xsl:message>-->
+    <xsl:if test="$doDebug">
+      <xsl:message> + [DEBUG] href-fixup: href="<xsl:sequence select="$origHref"/>"</xsl:message>
+    </xsl:if>
     <xsl:variable name="topicParent" select="relpath:getParent($topicResultUri)" as="xs:string"/>
-   <!-- <xsl:message> + [DEBUG] href-fixup: topicParent="<xsl:sequence select="$topicParent"/>"</xsl:message> -->
+    <xsl:if test="$doDebug">
+      <xsl:message> + [DEBUG] href-fixup: topicParent="<xsl:sequence select="$topicParent"/>"</xsl:message> 
+    </xsl:if>
     <xsl:variable name="imageParent" select="relpath:getParent($effectiveImageUri)" as="xs:string"/>
-  <!-- <xsl:message> + [DEBUG] href-fixup: imageParent="<xsl:sequence select="$imageParent"/>"</xsl:message>-->
+    <xsl:if test="$doDebug">
+      <xsl:message> + [DEBUG] href-fixup: imageParent="<xsl:sequence select="$imageParent"/>"</xsl:message>
+    </xsl:if>
     <xsl:variable name="relParent" 
       select="relpath:getRelativePath($topicParent, $imageParent)" 
       as="xs:string"/>
-  <!-- <xsl:message> + [DEBUG] href-fixup: relParent="<xsl:sequence select="$relParent"/>"</xsl:message> -->
+    <xsl:if test="$doDebug">
+      <xsl:message> + [DEBUG] href-fixup: relParent="<xsl:sequence select="$relParent"/>"</xsl:message> 
+    </xsl:if>
     <xsl:variable name="newHref" select="relpath:newFile($relParent, relpath:getName($origHref))"/>
- <!--  <xsl:message> + [DEBUG] href-fixup: newHref="<xsl:sequence select="$newHref"/>"</xsl:message> -->
+    <xsl:if test="$doDebug">
+      <xsl:message> + [DEBUG] href-fixup: newHref="<xsl:sequence select="$newHref"/>"</xsl:message> 
+    </xsl:if>
     <xsl:attribute name="href" select="$newHref"/>
     <xsl:attribute name="origHref" select="$origHref"/>
+  </xsl:template>
+  
+  <xsl:template mode="href-fixup" match="*[df:class(., 'topic/param')][@valuetype = 'ref']/@value" priority="10">
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
+    <xsl:param name="topicResultUri" as="xs:string" tunnel="yes"/>
+    
+    <xsl:variable name="origHref" select="." as="xs:string"/>
+    <xsl:variable name="effectiveImageUri" 
+      select="relpath:newFile(relpath:newFile($outdir, $imagesOutputDir), relpath:getName($origHref))" 
+      as="xs:string"/>
+    <xsl:if test="$doDebug">
+      <xsl:message> + [DEBUG] href-fixup: href="<xsl:sequence select="$origHref"/>"</xsl:message>
+    </xsl:if>
+    <xsl:variable name="topicParent" select="relpath:getParent($topicResultUri)" as="xs:string"/>
+    <xsl:if test="$doDebug">
+      <xsl:message> + [DEBUG] href-fixup: topicParent="<xsl:sequence select="$topicParent"/>"</xsl:message> 
+    </xsl:if>
+    <xsl:variable name="imageParent" select="relpath:getParent($effectiveImageUri)" as="xs:string"/>
+    <xsl:if test="$doDebug">
+      <xsl:message> + [DEBUG] href-fixup: imageParent="<xsl:sequence select="$imageParent"/>"</xsl:message>
+    </xsl:if>
+    <xsl:variable name="relParent" 
+      select="relpath:getRelativePath($topicParent, $imageParent)" 
+      as="xs:string"/>
+    <xsl:if test="$doDebug">
+      <xsl:message> + [DEBUG] href-fixup: relParent="<xsl:sequence select="$relParent"/>"</xsl:message> 
+    </xsl:if>
+    <xsl:variable name="newHref" select="relpath:newFile($relParent, relpath:getName($origHref))"/>
+    <xsl:if test="$doDebug">
+      <xsl:message> + [DEBUG] href-fixup: newHref="<xsl:sequence select="$newHref"/>"</xsl:message> 
+    </xsl:if>
+    <xsl:attribute name="value" select="$newHref"/>
+    <xsl:attribute name="origValue" select="$origHref"/>
   </xsl:template>
   
   <xsl:template mode="href-fixup" match="xref[@scope = 'external']/@href | 
@@ -134,6 +179,11 @@
   
   <xsl:template mode="href-fixup" match="*">
     <!--<xsl:message> + [DEBUG] href-fixup, node template, element=<xsl:sequence select="name(.)"/>...</xsl:message>-->
+    <!-- FIXME: I think we need to be using local-name() here and being a bit
+                more namespace aware. Otherwise, the prefixes used in any 
+                namespaced (i.e., foreign) content need to be declared in
+                the stylesheet.
+      -->
     <xsl:element name="{name(.)}">
       <xsl:attribute name="xml:base"><xsl:value-of select="base-uri()"/></xsl:attribute>
       <xsl:apply-templates select="@*,node()" mode="#current"/>
