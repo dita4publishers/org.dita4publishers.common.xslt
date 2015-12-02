@@ -48,6 +48,16 @@
 
     <gmap:graphic-map>
       <xsl:call-template name="handleImageListFile"/>
+      <!-- NOTE: This logic puts all the referenced things in the images output directory
+                 rather than trying to preserve their original relative location because
+                 there are too many variables in how the files might be organized.
+                 
+                 A more complete solution would provide functions to determine the output
+                 location for any referenced thing as we do for topics currently but
+                 that's a major refactor, although it's probably needed to correctly handle
+                 all the cases.
+                 
+         -->
       <xsl:for-each select="$uniqueRefs/*">
         <xsl:variable name="absoluteUrl" as="xs:string" select="@href"/>
         <xsl:variable name="filename" as="xs:string" select="@filename"/>
@@ -87,7 +97,7 @@
   </xsl:template>
 
 
-  <xsl:template mode="generate-graphic-map get-graphic-refs"
+  <xsl:template mode="get-graphic-refs"
                 match="*[df:isTopicRef(.)]
                              [not(@scope = ('external', 'peer'))]
                              "
@@ -98,7 +108,7 @@
 
     <xsl:choose>
       <xsl:when test="not($topic)">
-        <xsl:message> + [WARNING] generate-graphic-map, get-graphic-refs: Failed to resolve topic reference to href
+        <xsl:message> + [WARNING] get-graphic-refs: Failed to resolve topic reference to href
             "<xsl:sequence select="string(@href)"/>"</xsl:message>
       </xsl:when>
       <xsl:otherwise>
@@ -127,20 +137,6 @@
     </xsl:choose>
   </xsl:template>
 
-
-  <xsl:template match="*[df:class(.,'topic/image')]" mode="generate-graphic-map">
-    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
-    <xsl:variable name="docUri" select="relpath:toUrl(@xtrf)" as="xs:string"/>
-    <xsl:variable name="parentPath" select="relpath:getParent($docUri)" as="xs:string"/>
-    <xsl:variable name="graphicPath" select="@href" as="xs:string"/>
-    <xsl:variable name="rawUrl" select="concat($parentPath, '/', $graphicPath)" as="xs:string"/>
-    <xsl:variable name="absoluteUrl" select="relpath:getAbsolutePath($rawUrl)"/>
-
-    <xsl:if test="$graphicPath">
-      <gmap:graphic-map-item input-url="{$absoluteUrl}"
-        output-url="{relpath:newFile($imagesOutputPath, relpath:getName($absoluteUrl))}"/>
-    </xsl:if>
-  </xsl:template>
 
   <xsl:template match="*[df:class(.,'topic/object')]" mode="get-graphic-refs">
     <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
@@ -186,31 +182,6 @@
     <xsl:apply-templates mode="#current"/>
   </xsl:template>
 
-  <xsl:template match="*[df:class(.,'topic/object')]" mode="generate-graphic-map">
-    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
-    
-    <xsl:if test="$doDebug">
-      <xsl:message> + [DEBUG] generate-graphic-map: <xsl:value-of select="concat(name(..), '/', name(.))"/></xsl:message>
-    </xsl:if>
-    
-    <xsl:variable name="docUri" select="relpath:toUrl(@xtrf)" as="xs:string"/>
-    <xsl:variable name="parentPath" select="relpath:getParent($docUri)" as="xs:string"/>
-    <xsl:variable name="dataPath" select="@data" as="xs:string?"/>
-    <xsl:variable name="codeBase" select="@codebase" as="xs:string?"/>
-    <xsl:variable name="rawUrl"
-      select="if (@codeBase != '')
-      then relpath:newFile($codeBase, $dataPath)
-      else relpath:newFile($parentPath, $dataPath)"
-      as="xs:string"/>
-    <xsl:variable name="absoluteUrl" select="relpath:getAbsolutePath($rawUrl)"/>
-
-    <xsl:if test="$dataPath and not($codeBase = '') and not(starts-with($dataPath, 'http:'))">
-      <gmap:graphic-map-item input-url="{$absoluteUrl}"
-        output-url="{relpath:newFile($imagesOutputPath, relpath:getName($absoluteUrl))}"/>
-    </xsl:if>
-    <xsl:apply-templates mode="#current"/>
-  </xsl:template>
-
   <xsl:template match="*[df:class(.,'topic/param')][@valuetype = 'ref']" mode="get-graphic-refs">
     <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
     
@@ -245,21 +216,6 @@
     </xsl:choose>
   </xsl:template>
 
-  <xsl:template match="*[df:class(.,'topic/param')][@valuetype = 'ref']" mode="generate-graphic-map">
-    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
-    
-    <xsl:variable name="docUri" select="relpath:toUrl(@xtrf)" as="xs:string"/>
-    <xsl:variable name="parentPath" select="relpath:getParent($docUri)" as="xs:string"/>
-    <xsl:variable name="valuePath" select="@value" as="xs:string?"/>
-    <xsl:variable name="rawUrl" select="concat($parentPath, '/', $valuePath)" as="xs:string"/>
-    <xsl:variable name="absoluteUrl" select="relpath:getAbsolutePath($rawUrl)"/>
-
-    <xsl:if test="$valuePath">
-      <gmap:graphic-map-item input-url="{$absoluteUrl}"
-        output-url="{relpath:newFile($imagesOutputPath, relpath:getName($absoluteUrl))}"/>
-    </xsl:if>
-  </xsl:template>
-
   <xsl:template match="val | val/prop | val/revprop" mode="get-graphic-refs">
     <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
     
@@ -280,12 +236,10 @@
     </xsl:if>
   </xsl:template>
 
-
-
   <xsl:template match="text()" mode="generate-graphic-map get-graphic-refs"/>
 
-<xsl:template name="handleImageListFile">
-  <xsl:param name="uplevels" as="xs:string" select="''" tunnel="yes" />
+  <xsl:template name="handleImageListFile">
+    <xsl:param name="uplevels" as="xs:string" select="''" tunnel="yes" />
 
     <xsl:variable name="imageListUri" as="xs:string"
        select="relpath:newFile($tempdir, 'image.list')"
