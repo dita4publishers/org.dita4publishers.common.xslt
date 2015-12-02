@@ -20,11 +20,14 @@
 
     <xsl:variable name="docMapUri" select="concat(relpath:getParent(@xtrf), '/')" as="xs:string"/>
     <xsl:message> + [INFO] Generating graphic input-to-output map...</xsl:message>
-
+    
     <xsl:variable name="graphicRefs" as="element()*">
+      <xsl:message> + [DEBUG] ** generate-graphic-map: Applying templates in mode get-graphic-refs to all topicrefs...</xsl:message>
       <xsl:apply-templates mode="get-graphic-refs" select=".//*[df:isTopicRef(.)]">
+        <xsl:with-param name="doDebug" as="xs:boolean" tunnel="yes" select="true()"/>
         <xsl:with-param name="docMapUri" select="$docMapUri" tunnel="yes"/>
       </xsl:apply-templates>
+      <xsl:message> + [DEBUG] ** generate-graphic-map: Done with topicrefs</xsl:message>
       <xsl:if test="$FILTERDOC">
         <xsl:apply-templates mode="get-graphic-refs" select="$FILTERDOC/*"/>
       </xsl:if>
@@ -87,13 +90,11 @@
   <xsl:template mode="generate-graphic-map get-graphic-refs"
                 match="*[df:isTopicRef(.)]
                              [not(@scope = ('external', 'peer'))]
-                             [not(ancestor::*[df:class(., 'map/topicref')][@copy-to])]"
+                             "
     >
-
-
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
+    
     <xsl:variable name="topic" select="df:resolveTopicRef(.)" as="element()*"/>
-
-    <xsl:variable name="copyto" select="@copy-to"/>
 
     <xsl:choose>
       <xsl:when test="not($topic)">
@@ -101,18 +102,34 @@
             "<xsl:sequence select="string(@href)"/>"</xsl:message>
       </xsl:when>
       <xsl:otherwise>
-        <xsl:apply-templates
-          select="$topic//*[df:class(.,'topic/image')] |
-                  $topic//*[df:class(.,'topic/object')]"
-          mode="#current">
-          <xsl:with-param name="copyto" select="string($copyto)" as="xs:string" tunnel="yes"/>
-        </xsl:apply-templates>
+        <!-- If @copy-to is specified then we need to handle images and object.
+          
+          If @copy-to is not specified, then we only handle object elements as
+          the images will have been handled by preprocessing and listed in image.list.
+          -->
+        <xsl:choose>
+          <xsl:when test="@copy-to">
+            <xsl:apply-templates
+              select="$topic//*[df:class(.,'topic/image')] | 
+                      $topic//*[df:class(.,'topic/object')]"
+              mode="#current">
+              <xsl:with-param name="copyto" select="string(@copy-to)" as="xs:string" tunnel="yes"/>
+            </xsl:apply-templates>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:apply-templates
+              select="$topic//*[df:class(.,'topic/object')]"
+              mode="#current">
+            </xsl:apply-templates>
+          </xsl:otherwise>
+        </xsl:choose>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
 
 
   <xsl:template match="*[df:class(.,'topic/image')]" mode="generate-graphic-map">
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
     <xsl:variable name="docUri" select="relpath:toUrl(@xtrf)" as="xs:string"/>
     <xsl:variable name="parentPath" select="relpath:getParent($docUri)" as="xs:string"/>
     <xsl:variable name="graphicPath" select="@href" as="xs:string"/>
@@ -126,6 +143,12 @@
   </xsl:template>
 
   <xsl:template match="*[df:class(.,'topic/object')]" mode="get-graphic-refs">
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
+    
+    <xsl:if test="$doDebug">
+      <xsl:message> + [DEBUG] get-graphic-refs: <xsl:value-of select="concat(name(..), '/', name(.))"/></xsl:message>
+    </xsl:if>
+
     <!-- NOTE: For object elements, the @data attribute points at the main
                object data object, but its location may be relative to @codebase.
                It's a bit ambiguous in practice whether the @data object will
@@ -164,6 +187,12 @@
   </xsl:template>
 
   <xsl:template match="*[df:class(.,'topic/object')]" mode="generate-graphic-map">
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
+    
+    <xsl:if test="$doDebug">
+      <xsl:message> + [DEBUG] generate-graphic-map: <xsl:value-of select="concat(name(..), '/', name(.))"/></xsl:message>
+    </xsl:if>
+    
     <xsl:variable name="docUri" select="relpath:toUrl(@xtrf)" as="xs:string"/>
     <xsl:variable name="parentPath" select="relpath:getParent($docUri)" as="xs:string"/>
     <xsl:variable name="dataPath" select="@data" as="xs:string?"/>
@@ -183,12 +212,19 @@
   </xsl:template>
 
   <xsl:template match="*[df:class(.,'topic/param')][@valuetype = 'ref']" mode="get-graphic-refs">
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
+    
+    <xsl:if test="$doDebug">
+      <xsl:message> + [DEBUG] get-graphic-refs: <xsl:value-of select="concat(name(..), '/', name(.))"/></xsl:message>
+    </xsl:if>
+    
+    
     <xsl:variable name="docUri" select="relpath:toUrl(@xtrf)" as="xs:string"/>
     <xsl:variable name="parentPath" select="relpath:getParent($docUri)" as="xs:string"/>
     <xsl:variable name="valuePath" select="@value" as="xs:string?"/>
     <xsl:variable name="rawUrl" select="concat($parentPath, '/', $valuePath)" as="xs:string"/>
     <xsl:variable name="absoluteUrl" select="relpath:getAbsolutePath($rawUrl)"/>
-    <xsl:if test="$debugBoolean">
+    <xsl:if test="$doDebug">
       <xsl:message> + [DEBUG] get-graphic-refs for param: docUri="<xsl:sequence select="$docUri"/>"
           parentPath="<xsl:sequence select="$parentPath"/>" valuePath="<xsl:sequence select="$valuePath"/>"
       </xsl:message>
@@ -210,6 +246,8 @@
   </xsl:template>
 
   <xsl:template match="*[df:class(.,'topic/param')][@valuetype = 'ref']" mode="generate-graphic-map">
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
+    
     <xsl:variable name="docUri" select="relpath:toUrl(@xtrf)" as="xs:string"/>
     <xsl:variable name="parentPath" select="relpath:getParent($docUri)" as="xs:string"/>
     <xsl:variable name="valuePath" select="@value" as="xs:string?"/>
@@ -223,10 +261,14 @@
   </xsl:template>
 
   <xsl:template match="val | val/prop | val/revprop" mode="get-graphic-refs">
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
+    
     <xsl:apply-templates mode="#current"/>
   </xsl:template>
 
   <xsl:template match="startflag[@imageref] | endflag[@imageref]" mode="get-graphic-refs">
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
+    
     <xsl:variable name="docUri" select="string(document-uri(root(.)))" as="xs:string"/>
     <xsl:variable name="parentPath" select="relpath:getParent($docUri)" as="xs:string"/>
     <xsl:variable name="graphicPath" select="@imageref" as="xs:string"/>
