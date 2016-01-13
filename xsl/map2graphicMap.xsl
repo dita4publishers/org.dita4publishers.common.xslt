@@ -103,7 +103,16 @@
       then concat($namePart, '-', count(preceding-sibling::*[@filename = $filename]) + 1, '.', $extension)
       else $filename
       "/>
-    <xsl:sequence select="relpath:newFile($imagesOutputPath, $key)"/>
+    <xsl:choose>
+      <xsl:when test="@targetDir">
+        <xsl:variable name="outputPath" as="xs:string" select="relpath:toUrl(relpath:newFile($outdir, @targetDir))"/>
+        <xsl:sequence select="relpath:newFile($outputPath, $key)"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:sequence select="relpath:newFile($imagesOutputPath, $key)"/>
+      </xsl:otherwise>
+    </xsl:choose>
+    
   </xsl:template>
   
   <xsl:template mode="additional-graphic-refs" match="*[df:class(., 'map/map')]">
