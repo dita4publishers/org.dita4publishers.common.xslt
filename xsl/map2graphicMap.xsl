@@ -54,10 +54,24 @@
     <xsl:message> + [INFO] Found <xsl:sequence select="count($uniqueRefs/*)"/> unique graphic references.</xsl:message>
     
     <gmap:graphic-map>
-      <xsl:call-template name="handleImageListFile"/>
+      <xsl:if test="$doDebug">
+        <xsl:message> + [DEBUG] generate-graphic-map: Calling template handleImageListFile..."</xsl:message>
+      </xsl:if>
+      <xsl:call-template name="handleImageListFile">
+        <xsl:with-param name="doDebug" as="xs:boolean" tunnel="yes" select="$doDebug"/>
+      </xsl:call-template>
+      <xsl:if test="$doDebug">
+        <xsl:message> + [DEBUG] generate-graphic-map: HandleImageListFile done."</xsl:message>
+      </xsl:if>
+      <xsl:if test="$doDebug">
+        <xsl:message> + [DEBUG] generate-graphic-map: Applying templtaes to unique refs..."</xsl:message>
+      </xsl:if>
       <xsl:apply-templates mode="#current" select="$uniqueRefs">
         <xsl:with-param name="doDebug" as="xs:boolean" tunnel="yes" select="$doDebug"/>
       </xsl:apply-templates>
+      <xsl:if test="$doDebug">
+        <xsl:message> + [DEBUG] generate-graphic-map: Unique ref processing done."</xsl:message>
+      </xsl:if>
     </gmap:graphic-map>
     <xsl:message> + [INFO] Graphic input-to-output map generated.</xsl:message>
   </xsl:template>
@@ -268,16 +282,29 @@
     <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
     <xsl:param name="uplevels" as="xs:string" select="''" tunnel="yes" />
     
+    <xsl:if test="$doDebug">
+      <xsl:message> + [DEBUG] handleImageListFile: Starting...</xsl:message>
+    </xsl:if>
     <xsl:variable name="imageListUri" as="xs:string"
       select="relpath:newFile($tempdir, 'image.list')"
     />
     <xsl:choose>
       <xsl:when test="unparsed-text-available($imageListUri)">
+        <xsl:if test="$doDebug">
+          <xsl:message> + [DEBUG] handleImageListFile: Image list file is available.</xsl:message>
+        </xsl:if>
         <xsl:variable name="imageList"
           select="unparsed-text($imageListUri)"
         />
+        <xsl:if test="$doDebug">
+          <xsl:message> + [DEBUG] handleImageListFile: Image List:
+            <xsl:sequence select="$imageList"/>
+          </xsl:message>
+        </xsl:if>
         <xsl:for-each select="tokenize($imageList, '&#x0a;')">
-          <!--          <xsl:message> + [DEBUG] line[<xsl:value-of select="position()"/>]="<xsl:value-of select="."/>"</xsl:message>-->
+          <xsl:if test="$doDebug">
+            <xsl:message> + [DEBUG] handleImageListFile: line[<xsl:value-of select="position()"/>]="<xsl:value-of select="."/>"</xsl:message>
+          </xsl:if>
           <xsl:variable name="textNode" as="text()">
             <xsl:value-of select="."/>
           </xsl:variable>
