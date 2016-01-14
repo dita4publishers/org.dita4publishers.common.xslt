@@ -19,7 +19,7 @@
     <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
     <xsl:param name="effectiveCoverGraphicUri" select="''" as="xs:string" tunnel="yes"/>
     
-    <!--    <xsl:variable name="doDebug" as="xs:boolean" select="true()"/>  -->
+<!--   <xsl:variable name="doDebug" as="xs:boolean" select="true()"/>  -->
     
     <xsl:variable name="docMapUri" select="concat(relpath:getParent(@xtrf), '/')" as="xs:string"/>
     <xsl:message> + [INFO] Generating graphic input-to-output map...</xsl:message>
@@ -36,11 +36,20 @@
         <xsl:message> + [DEBUG] ** generate-graphic-map: Done with topicrefs</xsl:message>
       </xsl:if>
       <xsl:if test="$FILTERDOC">
-        <xsl:apply-templates mode="get-graphic-refs" select="$FILTERDOC/*"/>
+        <xsl:apply-templates mode="get-graphic-refs" select="$FILTERDOC/*">
+          <xsl:with-param name="doDebug" as="xs:boolean" tunnel="yes" select="$doDebug"/>
+        </xsl:apply-templates>
+      </xsl:if>
+      <xsl:if test="$doDebug">
+        <xsl:message> + [DEBUG] ** generate-graphic-map: Applying templates to map in mode additional-graphic-refs...</xsl:message>
       </xsl:if>
       <xsl:apply-templates mode="additional-graphic-refs" select=".">
+        <xsl:with-param name="doDebug" as="xs:boolean" tunnel="yes" select="$doDebug"/>
         <xsl:with-param name="docMapUri" select="$docMapUri" tunnel="yes"/>
       </xsl:apply-templates>
+      <xsl:if test="$doDebug">
+        <xsl:message> + [DEBUG] ** generate-graphic-map: Additional-graphic-refs done</xsl:message>
+      </xsl:if>
     </xsl:variable>
     
     <xsl:message> + [INFO] Found <xsl:sequence select="count($graphicRefs)"/> graphic references.</xsl:message>
@@ -134,6 +143,10 @@
          such as setting a default cover graphic or including branding components
          or whatever.
     -->
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
+    <xsl:if test="$doDebug">
+      <xsl:message> + [DEBUG] additional-graphic-refs: Base do-nothing implementation in common.xslt map2graphicMap.xsl.</xsl:message>
+    </xsl:if>
   </xsl:template>
 
 
