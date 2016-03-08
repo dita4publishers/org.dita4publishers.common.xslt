@@ -60,6 +60,7 @@
         input-url="file:/Users/ekimber/workspace/dita4publishers/sample_data/epub-test/covers/images/1407-02.jpg"
         output-url="file:/Users/ekimber/workspace/dita4publishers/sample_data/epub-test/epub/images/1407-02.jpg"/>
     -->
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
     <xsl:variable name="targetId" as="xs:string" select="if (@id) then @id else concat('map-item-', position())"/>
     <xsl:variable name="sourceDir" 
       select="relpath:toFile(relpath:getParent(string(@input-url)), $platform)"/>
@@ -67,10 +68,12 @@
       <xsl:message> + [DEBUG] graphic-map-item: $sourceDir="<xsl:sequence select="$sourceDir"/>"</xsl:message>
     </xsl:if>
     <xsl:variable name="toFile" select="relpath:toFile(string(@output-url), $platform)" as="xs:string"/>
-    <xsl:message> + [INFO]   Mapping input graphic 
+    <xsl:if test="$doDebug">
+      <xsl:message> + [INFO]   Mapping input graphic 
  + [INFO]      Input URL: <xsl:sequence select="string(@input-url)"/>
  + [INFO]    Target File: <xsl:sequence select="$toFile"/> 
-    </xsl:message>
+      </xsl:message>
+    </xsl:if>
     <xsl:if test="false()">    
       <xsl:message> + [DEBUG] graphic-map-item: $toFile="<xsl:sequence select="$toFile"/>"</xsl:message>
     </xsl:if>
