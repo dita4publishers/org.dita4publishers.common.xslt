@@ -106,8 +106,9 @@
           <xsl:attribute name="id" select="generate-id(.)"/>
         </xsl:otherwise>
       </xsl:choose>
-      <!-- For EPUB3: -->
-      <xsl:sequence select="@properties"/>
+      <!-- Copy any additional attributes. This includes the EPUB3-specific @properties attribute: -->
+      <xsl:sequence select="@* except (@href, @filename)"/>
+      
     </gmap:graphic-map-item>
     
   </xsl:template>
