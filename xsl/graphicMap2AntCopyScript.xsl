@@ -9,7 +9,7 @@
   exclude-result-prefixes="xd df xs relpath gmap"
   version="2.0">
   
-<!--  <xsl:import href="lib/relpath_util.xsl"/>-->
+  <!--  <xsl:import href="lib/relpath_util.xsl"/>-->
   
   <xsl:output name="ant" method="xml"
     indent="yes"
@@ -55,6 +55,8 @@
   </xsl:template>
   
   <xsl:template match="gmap:graphic-map-item" mode="generate-copy-targets">
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
+    
     <!--
       <gmap:graphic-map-item id="map-item-01"
         input-url="file:/Users/ekimber/workspace/dita4publishers/sample_data/epub-test/covers/images/1407-02.jpg"
@@ -68,21 +70,64 @@
     </xsl:if>
     <xsl:variable name="toFile" select="relpath:toFile(string(@output-url), $platform)" as="xs:string"/>
     <xsl:message> + [INFO]   Mapping input graphic 
- + [INFO]      Input URL: <xsl:sequence select="string(@input-url)"/>
- + [INFO]    Target File: <xsl:sequence select="$toFile"/> 
+      + [INFO]      Input URL: <xsl:sequence select="string(@input-url)"/>
+      + [INFO]    Target File: <xsl:sequence select="$toFile"/> 
     </xsl:message>
     <xsl:if test="false()">    
       <xsl:message> + [DEBUG] graphic-map-item: $toFile="<xsl:sequence select="$toFile"/>"</xsl:message>
     </xsl:if>
+    
+    <xsl:apply-templates mode="gmap:generate-check-target" select=".">
+      <xsl:with-param name="doDebug" as="xs:boolean" tunnel="yes" select="$doDebug"/>
+      <xsl:with-param name="targetId" as="xs:string" tunnel="yes" select="$targetId"/>
+      <xsl:with-param name="sourceDir" as="xs:string" tunnel="yes" select="$sourceDir"/>
+      <xsl:with-param name="toFile" as="xs:string" tunnel="yes" select="$toFile"/>
+    </xsl:apply-templates>
+    
+    <xsl:apply-templates mode="gmap:generate-report-target" select=".">
+      <xsl:with-param name="doDebug" as="xs:boolean" tunnel="yes" select="$doDebug"/>
+      <xsl:with-param name="targetId" as="xs:string" tunnel="yes" select="$targetId"/>
+      <xsl:with-param name="sourceDir" as="xs:string" tunnel="yes" select="$sourceDir"/>
+      <xsl:with-param name="toFile" as="xs:string" tunnel="yes" select="$toFile"/>
+    </xsl:apply-templates>
+    
+    <xsl:apply-templates mode="gmap:generate-copy-target" select=".">
+      <xsl:with-param name="doDebug" as="xs:boolean" tunnel="yes" select="$doDebug"/>
+      <xsl:with-param name="targetId" as="xs:string" tunnel="yes" select="$targetId"/>
+      <xsl:with-param name="sourceDir" as="xs:string" tunnel="yes" select="$sourceDir"/>
+      <xsl:with-param name="toFile" as="xs:string" tunnel="yes" select="$toFile"/>
+    </xsl:apply-templates>
+    
+  </xsl:template>
+  
+  <!-- Generate an Ant target that checks whether or not the file to be copied
+       actually exists. This allows reporting of missing files without having
+       the entire copy process quit.
+       
+    -->
+  <xsl:template mode="gmap:generate-check-target" match="gmap:graphic-map-item">
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
+    <xsl:param name="targetId" as="xs:string" tunnel="yes"/>
+    <xsl:param name="sourceDir" as="xs:string" tunnel="yes"/>
     
     <target name="check-{$targetId}">
       <condition property="is-{$targetId}">
         <available 
           filepath="{$sourceDir}"
           file="{relpath:getName(@input-url)}"
-          />
+        />
       </condition>      
     </target>
+    
+  </xsl:template>
+  
+  <!-- Generate an Ant target that reports missing files to be copied.
+       
+    -->
+  <xsl:template mode="gmap:generate-report-target" match="gmap:graphic-map-item">
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
+    <xsl:param name="targetId" as="xs:string" tunnel="yes"/>
+    <xsl:param name="sourceDir" as="xs:string" tunnel="yes"/>
     
     <target name="report-{$targetId}" unless="is-{$targetId}">
       <!-- FIXME: Instead of just reporting this, we could copy in a missing graphic file 
@@ -91,14 +136,26 @@
       <echo>[WARN] File <xsl:value-of select="@input-url"/> cannot be found. Will not be copied.</echo>
     </target>
     
+  </xsl:template>
+  
+  <!-- Generate an Ant target that does the copying.
+       
+    -->
+  <xsl:template mode="gmap:generate-copy-target" match="gmap:graphic-map-item">
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
+    <xsl:param name="targetId" as="xs:string" tunnel="yes"/>
+    <xsl:param name="sourceDir" as="xs:string" tunnel="yes"/>
+    <xsl:param name="toFile" as="xs:string" tunnel="yes"/>
+    
     <target name="copy-{$targetId}" depends="check-{$targetId}, report-{$targetId}" if="is-{$targetId}">
       <copy toFile="{$toFile}" overwrite="yes"
-      >
+        >
         <fileset dir="{$sourceDir}">
           <include name="{relpath:getName(@input-url)}"/>
         </fileset>
       </copy>      
     </target>
+    
   </xsl:template>
   
 </xsl:stylesheet>
