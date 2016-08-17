@@ -345,7 +345,7 @@
     />
     
     <xsl:variable name="absoluteUrl" as="xs:string"
-      select="relpath:newFile($inputdirUrl, concat(replace($uplevels, '\', '/'), .))"
+      select="relpath:newFile($inputdirUrl, concat(replace($uplevels, '\\', '/'), .))"
     />
     
     
