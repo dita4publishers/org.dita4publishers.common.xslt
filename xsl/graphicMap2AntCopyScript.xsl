@@ -65,7 +65,7 @@
     <xsl:variable name="targetId" as="xs:string" select="if (@id) then @id else concat('map-item-', position())"/>
     <xsl:variable name="sourceDir" 
       select="relpath:toFile(relpath:getParent(string(@input-url)), $platform)"/>
-    <xsl:if test="false()">
+    <xsl:if test="$debugBoolean">
       <xsl:message> + [DEBUG] graphic-map-item: $sourceDir="<xsl:sequence select="$sourceDir"/>"</xsl:message>
     </xsl:if>
     <xsl:variable name="toFile" select="relpath:toFile(string(@output-url), $platform)" as="xs:string"/>
@@ -73,7 +73,7 @@
       + [INFO]      Input URL: <xsl:sequence select="string(@input-url)"/>
       + [INFO]    Target File: <xsl:sequence select="$toFile"/> 
     </xsl:message>
-    <xsl:if test="false()">    
+    <xsl:if test="$debugBoolean">    
       <xsl:message> + [DEBUG] graphic-map-item: $toFile="<xsl:sequence select="$toFile"/>"</xsl:message>
     </xsl:if>
     
