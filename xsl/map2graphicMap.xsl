@@ -50,6 +50,11 @@
       <xsl:if test="$doDebug">
         <xsl:message> + [DEBUG] ** generate-graphic-map: Additional-graphic-refs done</xsl:message>
       </xsl:if>
+      <xsl:if test="string-length($effectiveCoverGraphicUri) ne 0">
+        <xsl:apply-templates select="." mode="cover-graphic-refs">
+          <xsl:with-param name="effectiveCoverGraphicUri" select="$effectiveCoverGraphicUri"/>
+        </xsl:apply-templates>
+      </xsl:if>
     </xsl:variable>
     
     <xsl:message> + [INFO] Found <xsl:sequence select="count($graphicRefs)"/> graphic references.</xsl:message>
@@ -83,6 +88,15 @@
       </xsl:if>
     </gmap:graphic-map>
     <xsl:message> + [INFO] Graphic input-to-output map generated.</xsl:message>
+  </xsl:template>
+  
+  <xsl:template match="*" mode="cover-graphic-refs">
+    <xsl:param name="effectiveCoverGraphicUri" as="xs:string"/>
+    <gmap:graphic-ref
+      id="{$coverImageId}"
+      href="{$effectiveCoverGraphicUri}"
+      filename="{relpath:getName($effectiveCoverGraphicUri)}"
+      properties="cover-image"/>
   </xsl:template>
   
   <xsl:template mode="generate-graphic-map" match="gmap:graphic-ref">
