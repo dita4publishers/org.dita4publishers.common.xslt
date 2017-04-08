@@ -14,6 +14,8 @@
 -->
   <xsl:output name="graphic-map" method="xml" indent="yes"/>
   <xsl:output name="ant" method="xml" indent="yes"/>
+  
+  <xsl:variable name="coverImageId" select="'coverimage'" as="xs:string"/>
 
   <xsl:template match="*[df:class(., 'map/map')]" mode="generate-graphic-map">
     <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
