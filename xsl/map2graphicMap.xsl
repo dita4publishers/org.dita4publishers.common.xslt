@@ -169,9 +169,11 @@
 
   <xsl:template mode="get-graphic-refs"
                 match="*[df:isTopicRef(.)]
-                             [not(@scope = ('external', 'peer'))]
-                             "
+                        [not(@scope = ('external', 'peer'))]
+                        [not(df:inChunk(.))]
+                      "
     >
+    <!-- Issue 13: Added [not(df:inChunk(.))] to match -->
     <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
     
     <xsl:variable name="topic" select="df:resolveTopicRef(.)" as="element()*"/>
