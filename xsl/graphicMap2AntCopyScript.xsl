@@ -1,19 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+  xmlns:axsl="http://www.w3.org/1999/XSL/TransformAlias"
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
   xmlns:relpath="http://dita2indesign/functions/relpath"
   xmlns:xd="http://www.oxygenxml.com/ns/doc/xsl"
   xmlns:df="http://dita2indesign.org/dita/functions"
   xmlns:gmap="http://dita4publishers/namespaces/graphic-input-to-output-map"
   exclude-result-prefixes="xd df xs relpath gmap"
-  version="2.0">
+  version="3.0">
+  
+  <xsl:namespace-alias stylesheet-prefix="axsl" result-prefix="xsl"/>
   
   <!--  <xsl:import href="lib/relpath_util.xsl"/>-->
   
   <xsl:output name="ant" method="xml"
     indent="yes"
   />
+  
+  <xsl:output name="xslt" method="xml"/>
   
   <xsl:template match="/" mode="generate-graphic-copy-ant-script">
     <xsl:apply-templates mode="#current"/>
@@ -31,6 +36,17 @@
     <xsl:result-document format="ant" href="{$resultUri}">
       <xsl:apply-templates select="$graphicMap" mode="#current"/>
     </xsl:result-document>  
+    <!-- Generate a trivial identity transform for copying XML files. The Ant <xslt> 
+         task requires that we provide one.
+      -->
+    <xsl:result-document href="{relpath:newFile($outdir, 'identity.xsl')}" format="xslt">
+      <axsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+        version="3.0">
+        
+        <axsl:mode on-no-match="shallow-copy"/>
+        
+      </axsl:stylesheet>
+    </xsl:result-document>
     <xsl:message> + [INFO] Ant graphic copying script generation done.</xsl:message>
   </xsl:template>
   
@@ -138,6 +154,37 @@
     
   </xsl:template>
   
+  <!-- For SVG, use XSLT to copy the file in order to remove any DOCTYPE declaration.
+       
+    -->
+  <xsl:template mode="gmap:generate-copy-target" match="gmap:graphic-map-item[matches(@input-url, '.svg$', 'i')]">
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
+    <xsl:param name="targetId" as="xs:string" tunnel="yes"/>
+    <xsl:param name="sourceDir" as="xs:string" tunnel="yes"/>
+    <xsl:param name="toFile" as="xs:string" tunnel="yes"/>
+    
+    <xsl:variable name="inPath" as="xs:string" select="relpath:urlToNxFile(@input-url)"/>
+    <xsl:variable name="outPath" as="xs:string" select="relpath:urlToNxFile(@output-url)"/>
+    
+    <target name="copy-{$targetId}" depends="check-{$targetId}, report-{$targetId}" if="is-{$targetId}">
+      <xslt processor="trax"
+        style="{relpath:urlToNxFile(relpath:newFile($outdir, 'identity.xsl'))}"
+        in="{$inPath}"
+        out="{$outPath}"
+        >
+        <factory name="net.sf.saxon.TransformerFactoryImpl">
+          <!-- Allow Saxon to supply it's own XML reader, which lets it use built-in SVG DTDs -->
+          <attribute 
+            name="http://saxon.sf.net/feature/ignoreSAXSourceParser" 
+            value="true"
+          />
+        </factory>
+      </xslt>
+    </target>
+    
+  </xsl:template>
+  
+
   <!-- Generate an Ant target that does the copying.
        
     -->
