@@ -4,9 +4,10 @@
   xmlns:df="http://dita2indesign.org/dita/functions" xmlns:xd="http://www.oxygenxml.com/ns/doc/xsl"
   xmlns:relpath="http://dita2indesign/functions/relpath"
   xmlns:map2graphicmap="urn:d4p:map2graphicmap"  
-  
+  xmlns:err="http://www.w3.org/2005/xqt-errors"
   xmlns:gmap="http://dita4publishers/namespaces/graphic-input-to-output-map" exclude-result-prefixes="xs df relpath"
-  version="2.0">
+  expand-text="true"
+  version="3.0">
 
   <!--
   <xsl:import href="lib/dita-support-lib.xsl"/>
@@ -16,12 +17,20 @@
   <xsl:output name="ant" method="xml" indent="yes"/>
   
   <xsl:variable name="coverImageId" select="'coverimage'" as="xs:string"/>
+  
+  <xsl:template name="map2graphicmap:generate-graphic-map">
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
 
-  <xsl:template match="*[df:class(., 'map/map')]" mode="generate-graphic-map">
+    <xsl:apply-templates select="." mode="generate-graphic-map">
+      <xsl:with-param name="doDebug" as="xs:boolean" tunnel="yes" select="$doDebug"/>
+    </xsl:apply-templates>
+  </xsl:template>
+
+  <xsl:template match="*[contains-token(@class, 'map/map')]" mode="generate-graphic-map">
     <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
     <xsl:param name="effectiveCoverGraphicUri" select="''" as="xs:string" tunnel="yes"/>
     
-<!--   <xsl:variable name="doDebug" as="xs:boolean" select="true()"/>  -->
+    <xsl:variable name="doDebug" as="xs:boolean" select="$doDebug or false()"/>  
     
     <xsl:variable name="docMapUri" select="concat(relpath:getParent(@xtrf), '/')" as="xs:string"/>
     <xsl:message> + [INFO] Generating graphic input-to-output map...</xsl:message>
@@ -59,6 +68,9 @@
       </xsl:if>
     </xsl:variable>
     
+    <xsl:if test="$doDebug">
+      <xsl:message> + [DEBUG] ** generate-graphic-map: Found <xsl:sequence select="count($graphicRefs)"/> graphic references.</xsl:message>      
+    </xsl:if>
     <xsl:message> + [INFO] Found <xsl:sequence select="count($graphicRefs)"/> graphic references.</xsl:message>
     <xsl:variable name="uniqueRefs" as="element()">
       <root>
@@ -68,10 +80,10 @@
       </root>
     </xsl:variable>
     <xsl:message> + [INFO] Found <xsl:sequence select="count($uniqueRefs/*)"/> unique graphic references.</xsl:message>
-    
-    <gmap:graphic-map>
+
+    <gmap:graphic-map> 
       <xsl:if test="$doDebug">
-        <xsl:message> + [DEBUG] generate-graphic-map: Calling template handleImageListFile..."</xsl:message>
+      <xsl:message> + [DEBUG] generate-graphic-map: Calling template handleImageListFile..."</xsl:message>
       </xsl:if>
       <xsl:call-template name="handleImageListFile">
         <xsl:with-param name="doDebug" as="xs:boolean" tunnel="yes" select="$doDebug"/>
@@ -80,7 +92,7 @@
         <xsl:message> + [DEBUG] generate-graphic-map: HandleImageListFile done."</xsl:message>
       </xsl:if>
       <xsl:if test="$doDebug">
-        <xsl:message> + [DEBUG] generate-graphic-map: Applying templtaes to unique refs..."</xsl:message>
+        <xsl:message> + [DEBUG] generate-graphic-map: Applying templates to unique refs..."</xsl:message>
       </xsl:if>
       <xsl:apply-templates mode="#current" select="$uniqueRefs">
         <xsl:with-param name="doDebug" as="xs:boolean" tunnel="yes" select="$doDebug"/>
@@ -155,7 +167,7 @@
     
   </xsl:template>
   
-  <xsl:template mode="additional-graphic-refs" match="*[df:class(., 'map/map')]">
+  <xsl:template mode="additional-graphic-refs" match="*[contains-token(@class, 'map/map')]">
     <!-- Nothing to do by default. Override this template to do something special,
          such as setting a default cover graphic or including branding components
          or whatever.
@@ -184,33 +196,46 @@
             "<xsl:sequence select="string(@href)"/>"</xsl:message>
       </xsl:when>
       <xsl:otherwise>
-        <!-- If @copy-to is specified then we need to handle images and object.
-          
-          If @copy-to is not specified, then we only handle object elements as
-          the images will have been handled by preprocessing and listed in image.list.
-          -->
-        <xsl:choose>
-          <xsl:when test="@copy-to">
-            <xsl:apply-templates
-              select="$topic//*[df:class(.,'topic/image')] | 
-                      $topic//*[df:class(.,'topic/object')]"
-              mode="#current">
-              <xsl:with-param name="copyto" select="string(@copy-to)" as="xs:string" tunnel="yes"/>
-            </xsl:apply-templates>
-          </xsl:when>
-          <xsl:otherwise>
-            <xsl:apply-templates
-              select="$topic//*[df:class(.,'topic/object')]"
-              mode="#current">
-            </xsl:apply-templates>
-          </xsl:otherwise>
-        </xsl:choose>
+        <xsl:apply-templates
+          select="$topic//*[contains-token(@class,'topic/image')] | 
+                  $topic//*[contains-token(@class,'topic/object')]"
+          mode="#current">
+          <xsl:with-param name="doDebug" as="xs:boolean" tunnel="yes" select="$doDebug"/>
+        </xsl:apply-templates>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
+  
+  <xsl:template match="*[contains-token(@class,'topic/image')]" mode="get-graphic-refs">
+    <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
+    
+    <xsl:if test="$doDebug">
+      <xsl:message> + [DEBUG] get-graphic-refs: {name(..)}/{name(.)}:
+<xsl:sequence select="."/></xsl:message>
+    </xsl:if>
+    <!--
+      <image class="- topic/image " href="../images/cover-graphic.png" id="image_jww_x32_rh"
+      placement="inline" scalefit="yes" xtrc="image:1;9:84"
+      xtrf="file:/Users/ekimber/workspace-d4p/dita4publishers_ot2.x/docs/user_docs/d4p-users-guide/frontmatter/coverpage.xml">
+      -->
+    
+    <xsl:variable name="baseUri" as="xs:anyURI" select="xs:anyURI(@xtrf)"/>
+    <xsl:if test="$doDebug">
+      <xsl:message>+ [DEBUG] get-graphic-refs: topic/image: baseUri="{$baseUri}"</xsl:message>
+    </xsl:if>
+    <xsl:variable name="imageUri" as="xs:anyURI" select="xs:anyURI(@href)"/>
+    <xsl:if test="$doDebug">
+      <xsl:message>+ [DEBUG] get-graphic-refs: topic/image: imageUri="{$imageUri}"</xsl:message>
+    </xsl:if>
+    <xsl:variable name="absoluteUri" as="xs:string" select="resolve-uri($imageUri,$baseUri)"/>
+    <xsl:if test="$doDebug">
+      <xsl:message>+ [DEBUG] get-graphic-refs: topic/image: absoluteUri="{$absoluteUri}"</xsl:message>
+    </xsl:if>
+    <gmap:graphic-ref href="{$absoluteUri}" filename="{relpath:getName($absoluteUri)}"/>
+  </xsl:template>
 
 
-  <xsl:template match="*[df:class(.,'topic/object')]" mode="get-graphic-refs">
+  <xsl:template match="*[contains-token(@class,'topic/object')]" mode="get-graphic-refs">
     <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
     
     <xsl:if test="$doDebug">
@@ -231,7 +256,7 @@
     <xsl:variable name="parentPath" select="relpath:getParent($docUri)" as="xs:string"/>
     <xsl:variable name="dataPath" select="@data" as="xs:string?"/>
     <xsl:variable name="codeBase" select="@codebase" as="xs:string?"/>
-    <xsl:if test="$debugBoolean">
+    <xsl:if test="$doDebug">
       <xsl:message> + [DEBUG] get-graphic-refs for object: docUri="<xsl:sequence select="$docUri"/>"
           parentPath="<xsl:sequence select="$parentPath"/>" dataPath="<xsl:sequence select="$dataPath"/>"
           codeBase="<xsl:sequence select="$codeBase"/>" </xsl:message>
@@ -243,7 +268,7 @@
         else relpath:newFile($parentPath, $dataPath)"
         as="xs:string"/>
       <xsl:variable name="absoluteUrl" select="relpath:getAbsolutePath($rawUrl)"/>
-      <xsl:if test="$debugBoolean">
+      <xsl:if test="$doDebug">
         <xsl:message> rawUrl="<xsl:sequence select="$rawUrl"/>" absoluteUrl="<xsl:sequence select="$absoluteUrl"/>"
         </xsl:message>
       </xsl:if>
@@ -254,7 +279,7 @@
     <xsl:apply-templates mode="#current"/>
   </xsl:template>
 
-  <xsl:template match="*[df:class(.,'topic/param')][@valuetype = 'ref']" mode="get-graphic-refs">
+  <xsl:template match="*[contains-token(@class,'topic/param')][@valuetype = 'ref']" mode="get-graphic-refs">
     <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
     
     <xsl:if test="$doDebug">
@@ -274,7 +299,7 @@
     </xsl:if>
     <xsl:choose>
       <xsl:when test="not($valuePath)">
-        <xsl:variable name="topic" as="element()?" select="(ancestor-or-self::*[df:class(., 'topic/topic')])[1]"/>
+        <xsl:variable name="topic" as="element()?" select="(ancestor-or-self::*[contains-token(@class, 'topic/topic')])[1]"/>
         <xsl:variable name="contextString" as="xs:string"
           select="if ($topic)
           then concat('Topic ', df:getNavtitleForTopic($topic))
@@ -310,6 +335,11 @@
 
   <xsl:template match="text()" mode="generate-graphic-map get-graphic-refs"/>
 
+
+  <!-- NOTE: OT 3.x (and maybe 2.x) does not generate the image list file, so this code is only for
+             OT 1.8.5 support at this point.
+             
+    -->
   <xsl:template name="handleImageListFile">
     <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
     <xsl:param name="uplevels" as="xs:string" select="''" tunnel="yes" />
