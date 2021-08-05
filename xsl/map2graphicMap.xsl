@@ -219,19 +219,21 @@
       xtrf="file:/Users/ekimber/workspace-d4p/dita4publishers_ot2.x/docs/user_docs/d4p-users-guide/frontmatter/coverpage.xml">
       -->
     
-    <xsl:variable name="baseUri" as="xs:anyURI" select="xs:anyURI(@xtrf)"/>
+    <xsl:variable name="baseUri" as="xs:anyURI?" select="xs:anyURI(@xtrf)"/>
     <xsl:if test="$doDebug">
       <xsl:message>+ [DEBUG] get-graphic-refs: topic/image: baseUri="{$baseUri}"</xsl:message>
     </xsl:if>
-    <xsl:variable name="imageUri" as="xs:anyURI" select="xs:anyURI(@href)"/>
+    <xsl:variable name="imageUri" as="xs:anyURI?" select="xs:anyURI(@href)"/>
     <xsl:if test="$doDebug">
       <xsl:message>+ [DEBUG] get-graphic-refs: topic/image: imageUri="{$imageUri}"</xsl:message>
     </xsl:if>
-    <xsl:variable name="absoluteUri" as="xs:string" select="resolve-uri($imageUri,$baseUri)"/>
-    <xsl:if test="$doDebug">
-      <xsl:message>+ [DEBUG] get-graphic-refs: topic/image: absoluteUri="{$absoluteUri}"</xsl:message>
+    <xsl:if test="exists($baseUri) and exists($imageUri)">
+      <xsl:variable name="absoluteUri" as="xs:string" select="resolve-uri($imageUri,$baseUri)"/>
+      <xsl:if test="$doDebug">
+        <xsl:message>+ [DEBUG] get-graphic-refs: topic/image: absoluteUri="{$absoluteUri}"</xsl:message>
+      </xsl:if>
+      <gmap:graphic-ref href="{$absoluteUri}" filename="{relpath:getName($absoluteUri)}"/>      
     </xsl:if>
-    <gmap:graphic-ref href="{$absoluteUri}" filename="{relpath:getName($absoluteUri)}"/>
   </xsl:template>
 
 
