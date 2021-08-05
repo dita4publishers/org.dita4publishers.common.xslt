@@ -9,7 +9,7 @@
   xmlns:relpath="http://dita2indesign/functions/relpath"
   
   exclude-result-prefixes="xs htmlutil df relpath"
-  version="2.0">
+  version="3.0">
 
   <xsl:template match="/" mode="href-fixup">
     <xsl:apply-templates mode="#current"/>

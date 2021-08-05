@@ -7,7 +7,7 @@
   xmlns:relpath="http://dita2indesign/functions/relpath"
   xmlns:gmap="http://dita4publishers/namespaces/graphic-input-to-output-map"
   exclude-result-prefixes="xs df relpath"
-  version="2.0">
+  version="3.0">
   
   <!-- NOTE: This file's name is being migrated to map2graphicMap.xsl" (no "Impl"), so
        this is just a redirect to that file so existing plugins don't break.
