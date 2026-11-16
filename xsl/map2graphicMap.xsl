@@ -17,7 +17,16 @@
   <xsl:output name="ant" method="xml" indent="yes"/>
   
   <xsl:variable name="coverImageId" select="'coverimage'" as="xs:string"/>
-  
+
+  <!-- Elements pulled in by conref keep the @xtrf of the file they came from, but the
+       toolkit rewrites their references relative to the topic that uses them, so
+       references must be resolved against the containing topic's @xtrf.
+    -->
+  <xsl:function name="map2graphicmap:getReferenceBaseUri" as="xs:string?">
+    <xsl:param name="context" as="element()"/>
+    <xsl:sequence select="($context/ancestor::*[contains-token(@class, 'topic/topic')][last()]/@xtrf, $context/@xtrf)[1] ! string(.)"/>
+  </xsl:function>
+
   <xsl:template name="map2graphicmap:generate-graphic-map">
     <xsl:param name="doDebug" as="xs:boolean" tunnel="yes" select="false()"/>
 
@@ -219,7 +228,7 @@
       xtrf="file:/Users/ekimber/workspace-d4p/dita4publishers_ot2.x/docs/user_docs/d4p-users-guide/frontmatter/coverpage.xml">
       -->
     
-    <xsl:variable name="baseUri" as="xs:anyURI?" select="xs:anyURI(@xtrf)"/>
+    <xsl:variable name="baseUri" as="xs:anyURI?" select="xs:anyURI(map2graphicmap:getReferenceBaseUri(.))"/>
     <xsl:if test="$doDebug">
       <xsl:message>+ [DEBUG] get-graphic-refs: topic/image: baseUri="{$baseUri}"</xsl:message>
     </xsl:if>
@@ -254,7 +263,7 @@
                match what you actually do, if necessary.
       -->
 
-    <xsl:variable name="docUri" select="relpath:toUrl(@xtrf)" as="xs:string"/>
+    <xsl:variable name="docUri" select="relpath:toUrl(map2graphicmap:getReferenceBaseUri(.))" as="xs:string"/>
     <xsl:variable name="parentPath" select="relpath:getParent($docUri)" as="xs:string"/>
     <xsl:variable name="dataPath" select="@data" as="xs:string?"/>
     <xsl:variable name="codeBase" select="@codebase" as="xs:string?"/>
@@ -289,7 +298,7 @@
     </xsl:if>
     
     
-    <xsl:variable name="docUri" select="relpath:toUrl(@xtrf)" as="xs:string"/>
+    <xsl:variable name="docUri" select="relpath:toUrl(map2graphicmap:getReferenceBaseUri(.))" as="xs:string"/>
     <xsl:variable name="parentPath" select="relpath:getParent($docUri)" as="xs:string"/>
     <xsl:variable name="valuePath" select="@value" as="xs:string?"/>
     <xsl:variable name="rawUrl" select="concat($parentPath, '/', $valuePath)" as="xs:string"/>
